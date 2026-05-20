@@ -1,0 +1,258 @@
+
+<h2 class="sr-only">Mockup Google Form permintaan surat SMAN 97 Jakarta dengan logika kondisional untuk siswa dan guru/staff</h2>
+
+<div style="background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:1.5rem 1rem;">
+
+<div style="background:var(--color-background-primary);border-radius:var(--border-radius-lg);border:0.5px solid var(--color-border-tertiary);overflow:hidden;max-width:600px;margin:0 auto;">
+
+  <div style="background:#673ab7;padding:1.25rem 1.5rem 1rem;">
+    <div style="font-size:22px;font-weight:500;color:#fff;margin-bottom:4px;">Permintaan pembuatan surat</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.8);">SMAN 97 Jakarta — Tata Usaha</div>
+    <div style="margin-top:10px;height:4px;background:rgba(255,255,255,0.25);border-radius:2px;">
+      <div id="progress-bar" style="height:4px;background:#fff;border-radius:2px;width:0%;transition:width 0.4s;"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px;">
+      <span style="font-size:11px;color:rgba(255,255,255,0.7);" id="step-label">Langkah 1 dari 4</span>
+      <span style="font-size:11px;color:rgba(255,255,255,0.7);" id="step-pct">0%</span>
+    </div>
+  </div>
+
+  <div id="form-body" style="padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:18px;">
+  </div>
+
+  <div style="padding:0 1.5rem 1.25rem;display:flex;gap:10px;justify-content:flex-end;" id="nav-btns">
+    <button id="btn-back" onclick="goBack()" style="display:none;">Kembali</button>
+    <button id="btn-next" onclick="goNext()">Lanjut</button>
+  </div>
+
+</div>
+
+<div style="max-width:600px;margin:1rem auto 0;display:flex;gap:8px;flex-wrap:wrap;">
+  <button onclick="sendPrompt('Buatkan script Google Apps Script untuk notifikasi WhatsApp otomatis dari form ini ke staf TU SMAN 97')" style="font-size:13px;">Buatkan Apps Script notif WA ↗</button>
+  <button onclick="sendPrompt('Bagaimana cara membuat Google Form ini dengan logika kondisional untuk siswa dan guru?')" style="font-size:13px;">Cara buat di Google Form ↗</button>
+</div>
+
+</div>
+
+<script>
+const steps = [
+  {
+    title: "Identitas pemohon",
+    pct: 25,
+    fields: [
+      { type:'select', label:'Saya adalah', id:'role', required:true,
+        options:['-- Pilih --','Siswa','Guru / Staff'], onchange:'handleRole()' },
+      { type:'text', label:'Nama lengkap', id:'nama', required:true, placeholder:'Contoh: Budi Santoso' },
+      { type:'group', id:'grp-siswa', fields:[
+          { type:'text', label:'Kelas', id:'kelas', placeholder:'Contoh: XII MIPA 3' },
+          { type:'text', label:'NIS', id:'nis', placeholder:'Contoh: 14567' },
+          { type:'text', label:'NISN', id:'nisn', placeholder:'Contoh: 0087654321' },
+      ]},
+      { type:'group', id:'grp-guru', fields:[
+          { type:'text', label:'NIP / NUPTK', id:'nip', placeholder:'Contoh: 196901191998022001' },
+          { type:'text', label:'Jabatan', id:'jabatan', placeholder:'Contoh: Guru Matematika' },
+      ]},
+      { type:'text', label:'Tempat, tanggal lahir', id:'ttl', placeholder:'Contoh: Jakarta, 17 Agustus 2005' },
+      { type:'text', label:'Nomor WhatsApp aktif', id:'wa', required:true, placeholder:'Contoh: 08123456789' },
+    ]
+  },
+  {
+    title: "Jenis surat",
+    pct: 50,
+    fields: [
+      { type:'radio', label:'Pilih jenis surat yang dibutuhkan', id:'jenis', required:true,
+        options:[
+          'Surat keterangan aktif siswa',
+          'Surat izin mengikuti kegiatan',
+          'Surat rekomendasi / pengantar',
+          'Surat keterangan lulus / alumni',
+          'Surat keterangan untuk beasiswa',
+          'Lainnya (tuliskan di keterangan)',
+        ]
+      },
+    ]
+  },
+  {
+    title: "Detail kegiatan",
+    pct: 75,
+    fields: [
+      { type:'text', label:'Nama kegiatan', id:'kegiatan', required:true, placeholder:'Contoh: Seleksi SNBP 2026' },
+      { type:'text', label:'Penyelenggara / ditujukan kepada', id:'penyelenggara', placeholder:'Contoh: Panitia SNBP Kemendikbud' },
+      { type:'date', label:'Tanggal mulai kegiatan', id:'tgl-mulai', required:true },
+      { type:'date', label:'Tanggal selesai kegiatan', id:'tgl-selesai' },
+      { type:'time', label:'Jam kegiatan', id:'jam', placeholder:'Contoh: 08.00' },
+      { type:'textarea', label:'Keterangan tambahan', id:'ket', placeholder:'Tuliskan informasi lain yang perlu disampaikan ke staf TU...' },
+    ]
+  },
+  {
+    title: "Konfirmasi",
+    pct: 100,
+    fields: [
+      { type:'summary', id:'summary' },
+      { type:'checkbox', label:'Saya menyatakan bahwa data yang saya isi adalah benar dan dapat dipertanggungjawabkan.', id:'konfirmasi', required:true },
+    ]
+  }
+];
+
+let current = 0;
+const vals = {};
+
+function renderStep(i) {
+  const step = steps[i];
+  const body = document.getElementById('form-body');
+  body.innerHTML = '';
+
+  const title = document.createElement('div');
+  title.style.cssText = 'font-size:16px;font-weight:500;color:var(--color-text-primary);padding-bottom:12px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:4px;';
+  title.textContent = step.title;
+  body.appendChild(title);
+
+  step.fields.forEach(f => renderField(f, body));
+
+  document.getElementById('progress-bar').style.width = step.pct + '%';
+  document.getElementById('step-label').textContent = 'Langkah ' + (i+1) + ' dari ' + steps.length;
+  document.getElementById('step-pct').textContent = step.pct + '%';
+
+  document.getElementById('btn-back').style.display = i > 0 ? '' : 'none';
+  const btnNext = document.getElementById('btn-next');
+  btnNext.textContent = i === steps.length - 1 ? 'Kirim permintaan' : 'Lanjut';
+
+  if (i === 0) handleRole();
+}
+
+function renderField(f, parent) {
+  if (f.type === 'group') {
+    const grp = document.createElement('div');
+    grp.id = f.id;
+    grp.style.cssText = 'display:flex;flex-direction:column;gap:14px;';
+    f.fields.forEach(sf => renderField(sf, grp));
+    parent.appendChild(grp);
+    return;
+  }
+
+  if (f.type === 'summary') {
+    const box = document.createElement('div');
+    box.style.cssText = 'background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:1rem;font-size:13px;display:flex;flex-direction:column;gap:8px;';
+    const summaryFields = [
+      ['Nama',vals.nama],['Kelas',vals.kelas],['NIS',vals.nis],['NISN',vals.nisn],
+      ['NIP',vals.nip],['Jabatan',vals.jabatan],['TTL',vals.ttl],['WhatsApp',vals.wa],
+      ['Jenis surat',vals.jenis],['Kegiatan',vals.kegiatan],['Penyelenggara',vals.penyelenggara],
+      ['Tanggal',vals['tgl-mulai'] ? vals['tgl-mulai'] + (vals['tgl-selesai'] ? ' s.d. '+vals['tgl-selesai']:'') : ''],
+      ['Jam',vals.jam],['Keterangan',vals.ket]
+    ];
+    summaryFields.forEach(([k,v]) => {
+      if (!v) return;
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:8px;';
+      row.innerHTML = '<span style="color:var(--color-text-secondary);min-width:110px;">'+k+'</span><span style="color:var(--color-text-primary);">'+v+'</span>';
+      box.appendChild(row);
+    });
+    parent.appendChild(box);
+    return;
+  }
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
+
+  const lbl = document.createElement('label');
+  lbl.style.cssText = 'font-size:14px;color:var(--color-text-primary);';
+  lbl.textContent = f.label + (f.required ? ' *' : '');
+  wrap.appendChild(lbl);
+
+  if (f.type === 'select') {
+    const sel = document.createElement('select');
+    sel.id = f.id;
+    if (f.onchange) sel.setAttribute('onchange', f.onchange);
+    f.options.forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o === '-- Pilih --' ? '' : o;
+      opt.textContent = o;
+      if (vals[f.id] === o) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => vals[f.id] = sel.value);
+    wrap.appendChild(sel);
+  } else if (f.type === 'radio') {
+    const grp = document.createElement('div');
+    grp.style.cssText = 'display:flex;flex-direction:column;gap:8px;margin-top:2px;';
+    f.options.forEach(o => {
+      const row = document.createElement('label');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;font-size:14px;color:var(--color-text-primary);cursor:pointer;padding:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);';
+      const inp = document.createElement('input');
+      inp.type = 'radio'; inp.name = f.id; inp.value = o;
+      if (vals[f.id] === o) inp.checked = true;
+      inp.addEventListener('change', () => vals[f.id] = o);
+      row.appendChild(inp);
+      row.appendChild(document.createTextNode(o));
+      grp.appendChild(row);
+    });
+    wrap.appendChild(grp);
+  } else if (f.type === 'textarea') {
+    const ta = document.createElement('textarea');
+    ta.id = f.id; ta.placeholder = f.placeholder || '';
+    ta.style.cssText = 'min-height:80px;resize:vertical;';
+    ta.value = vals[f.id] || '';
+    ta.addEventListener('input', () => vals[f.id] = ta.value);
+    wrap.appendChild(ta);
+  } else if (f.type === 'checkbox') {
+    const row = document.createElement('label');
+    row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--color-text-secondary);cursor:pointer;';
+    const inp = document.createElement('input');
+    inp.type = 'checkbox'; inp.id = f.id;
+    inp.checked = !!vals[f.id];
+    inp.addEventListener('change', () => vals[f.id] = inp.checked);
+    inp.style.marginTop = '3px';
+    row.appendChild(inp);
+    row.appendChild(document.createTextNode(f.label));
+    wrap.appendChild(row);
+  } else {
+    const inp = document.createElement('input');
+    inp.type = f.type || 'text';
+    inp.id = f.id;
+    inp.placeholder = f.placeholder || '';
+    inp.value = vals[f.id] || '';
+    inp.addEventListener('input', () => vals[f.id] = inp.value);
+    wrap.appendChild(inp);
+  }
+
+  parent.appendChild(wrap);
+}
+
+function handleRole() {
+  const r = document.getElementById('role');
+  const v = r ? r.value : vals.role;
+  vals.role = v;
+  const gs = document.getElementById('grp-siswa');
+  const gg = document.getElementById('grp-guru');
+  if (gs) gs.style.display = v === 'Siswa' ? 'flex' : 'none';
+  if (gg) gg.style.display = v === 'Guru / Staff' ? 'flex' : 'none';
+}
+
+function goNext() {
+  if (current === steps.length - 1) {
+    const body = document.getElementById('form-body');
+    body.innerHTML = '';
+    const done = document.createElement('div');
+    done.style.cssText = 'text-align:center;padding:2rem 0;display:flex;flex-direction:column;gap:12px;align-items:center;';
+    done.innerHTML = '<i class="ti ti-circle-check" style="font-size:48px;color:var(--color-text-success);" aria-hidden="true"></i>'
+      + '<div style="font-size:18px;font-weight:500;color:var(--color-text-primary);">Permintaan terkirim!</div>'
+      + '<div style="font-size:13px;color:var(--color-text-secondary);max-width:340px;">Data kamu sudah masuk ke Google Sheets dan notifikasi telah dikirim ke staf TU. Surat akan diproses dan kamu akan dihubungi via WhatsApp.</div>';
+    body.appendChild(done);
+    document.getElementById('nav-btns').style.display = 'none';
+    document.getElementById('progress-bar').style.width = '100%';
+    document.getElementById('step-label').textContent = 'Selesai';
+    document.getElementById('step-pct').textContent = '100%';
+    return;
+  }
+  current++;
+  renderStep(current);
+  document.getElementById('form-body').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function goBack() {
+  current--;
+  renderStep(current);
+}
+
+renderStep(0);
+</script>
